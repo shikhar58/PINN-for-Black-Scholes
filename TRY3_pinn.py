@@ -197,6 +197,7 @@ def analytic(S):
     
 final_an=np.array([analytic(max(s[i],0.01)) for i in range(len(s))])
 
+
 #plt.plot(x_ic, catp, 'g', label="actual")
 plt.plot(s,final_an)
 plt.plot(s[:],final[0,:])
@@ -255,7 +256,7 @@ w_ic=tf.Variable(1.0)
 w_dc=tf.Variable(10.0)
 w_fc=tf.Variable(300.0)
 w_nb=tf.Variable(1.0)
-w_s=tf.Variable(5.0)
+w_s=tf.Variable(0*5.0)
 
 #w_fc is 10000 but considering nomralization of loss it will be 10000*(15535/3000)=50000multiplied. then it gives best result
 
@@ -294,7 +295,7 @@ loss = w_ic*tf.reduce_sum(tf.square(c_ic-c_ic1))/len(x_ic)+w_dc*tf.reduce_sum(tf
 w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)+w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f) + \
 w_s*tf.reduce_sum(tf.square(c_sp-c_s))/len(x_s)
 
-#loss = tf.reduce_sum(tf.square(c_ic))+10*tf.reduce_sum(tf.square(s_ic))+tf.reduce_sum(tf.square(c_dcb-c_dc))+100*tf.reduce_sum(tf.square(fc))+10000*tf.reduce_sum(tf.square(fs))+tf.reduce_sum(tf.square(j))
+loss = tf.reduce_sum(tf.square(c_ic))+10*tf.reduce_sum(tf.square(s_ic))+tf.reduce_sum(tf.square(c_dcb-c_dc))+100*tf.reduce_sum(tf.square(fc))+10000*tf.reduce_sum(tf.square(fs))+tf.reduce_sum(tf.square(j))
 
 
 loss_max=500000-loss
@@ -368,14 +369,19 @@ dd = pd.read_csv('datadriven.csv')
 ddnp=dd.values
 
 plt.scatter(x_s,c_s, label="synthetic data")
+plt.plot(s[:],final[0,:],color='orange',label="equation-driven", linewidth=4)
 plt.plot(x_ic, ddnp, 'g', label="data-driven", linewidth=4)
 plt.plot(x_ic, catp, 'k', label="PINN", linewidth=4)
-plt.plot(s[:],final[0,:],color='orange',label="equation-driven", linewidth=4)
 plt.plot(s,final_an,'--',color='brown', label="analytical", linewidth=4)
 
 plt.legend(loc="upper left", mode = "expand", ncol = 3)
-plt.ylim(0, 80.0)
+plt.ylim(-5, 80.0)
+
+plt.xlabel("stock price")
+plt.ylabel("call option price")
 plt.show()
+
+np.savetxt('pinnoriginal.csv', catp)
 
 """
 loss = w_ic*tf.reduce_sum(tf.square(c_ic-c_ic1))/len(x_ic)+w_dc*tf.reduce_sum(tf.square(c_dcb-c_dc))/len(x_lb)+w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)+w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f)

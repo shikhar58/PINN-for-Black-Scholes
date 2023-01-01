@@ -48,13 +48,13 @@ def plot_series(df=None, column=None, series=pd.Series([]),
     ax.grid(True)
     return ax
 
-df=pd.read_csv('PJM.csv',sep=";")
+df=pd.read_csv('PJMs.csv',sep=";")
 
 df.set_index('Date', inplace=True)
 
 dataset = df[(df >= 0).all(1)]
 
-dataset=dataset['PJM']
+
 
 rolling = dataset['PJM'].rolling(24*7, center=True).mean()
 ax = plot_series(dataset, 'PJM', label='Hourly', ylabel='Actual Price (€/MWh)',
@@ -64,7 +64,6 @@ plt.show()
 
 
 ax = dataset['PJM'].plot.hist(bins=18, alpha=0.65)
-train, test = dataset.iloc[:int(len(dataset*0.8)),1], dataset.iloc[int(len(dataset*0.8)):,1]
 
 res = sm.tsa.seasonal_decompose(df['PJM'], freq=24)
 
@@ -102,7 +101,49 @@ plot_pacf(dataset['PJM'], lags=50, ax=ax2)
 plt.tight_layout()
 plt.show()
 
-train, test = np.reshape(dataset.iloc[0:,1].values, (-1, 1)), np.reshape(dataset.iloc[:,1].values, (-1, 1))
+train, test = dataset.iloc[:int(len(dataset)*0.8),0].values, dataset.iloc[int(len(dataset)*0.8):,0].values
+
+
+import statsmodels.api as sm
+
+
+model = sm.tsa.arima.ARIMA(train, order=(4,0,0))
+
+model_fit = model.fit()
+
+test_predict = model_fit.predict(start=len(train), end=len(train)+len(test)-1, dynamic=False)
+
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+
+# invert predictions
+scaler.fit(test_predict.reshape(-1, 1))
+test_predict = scaler.inverse_transform(test_predict.reshape(-1, 1))
+
+scaler.fit(test.reshape(-1, 1))
+Y_test = scaler.inverse_transform(test.reshape(-1, 1))
+print('Test Mean Absolute Error:', mean_absolute_error(Y_test, test_predict))
+print('Test Root Mean Squared Error:',np.sqrt(mean_squared_error(Y_test, test_predict)))
+
+
+aa=[i for i in range(len(test))]
+plt.plot(aa,test, 'g', label="data-driven", linewidth=4)
+plt.plot(aa,test_predict ,'k', label="PINN", linewidth=4)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 def create_dataset(dataset, look_back):
     X, Y = [], []
@@ -113,9 +154,14 @@ def create_dataset(dataset, look_back):
     return np.array(X), np.array(Y)
 
 
-look_back = 9
-X_train, Y_train = create_dataset(train, look_back)
-X_test, Y_test = create_dataset(test, look_back)
+look_back = 1
+
+
+
+
+
+X_train, Y_train = create_dataset(train[:,None], look_back)
+X_test, Y_test = create_dataset(test[:,None], look_back)
 
 # reshape input to be [samples, time steps, features]
 X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
@@ -145,8 +191,11 @@ plt.plot(history.history['loss'], label='Train Loss')
 plt.plot(history.history['val_loss'], label='Test Loss')
 plt.title('model loss')
 
-idx = 500
-aa=[x for x in range(500)]
+idx = len(Y_test)
+aa=[x for x in range(len(Y_test))]
 plt.figure(figsize=(8,4))
 plt.plot(aa, Y_test[:idx], marker='.', label="actual")
 plt.plot(aa, test_predict[:idx,0], 'r', label="prediction")
+
+
+"""
