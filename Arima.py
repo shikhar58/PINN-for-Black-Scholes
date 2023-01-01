@@ -198,4 +198,8 @@ plt.plot(aa, Y_test[:idx], marker='.', label="actual")
 plt.plot(aa, test_predict[:idx,0], 'r', label="prediction")
 
 
+np.savetxt('test_predict.csv', test_predict)
+
+
+
 """
