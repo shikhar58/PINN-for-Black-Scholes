@@ -125,141 +125,6 @@ def callback(loss):
 #X = np.concatenate([x_train, y_train, t_train], 1)
 
 
-#DEFINE THIS ONLY FOR INPUT DATA, IE FEATURES AND TAGER WHICH Has to be minimised
-x_i=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-t_i=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-x_dcb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-t_dcb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-x_neb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-t_neb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-x_f=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-t_f=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-weights_c, biases_c = initialize_NN(layers_c)  
-
-w_ic=tf.Variable(100.0)
-w_dc=tf.Variable(1000.0)
-w_fc=tf.Variable(30000.0)
-w_nb=tf.Variable(1000.0)
-
-
-#w_fc is 10000 but considering nomralization of loss it will be 10000*(15535/3000)=50000multiplied. then it gives best result
-
-
-
-sess=tf.compat.v1.Session()
-init = tf.compat.v1.global_variables_initializer()
-sess.run(init)
-
-minval=np.array([0,0])
-maxval=np.array([100,0.25])
-tf_dict = {x_dcb: x_lb, t_dcb: t_lb, x_neb: x_rb, t_neb: t_rb, x_i: x_ic, t_i: t_ic, x_f: xx_f, t_f: tt_f }
-
-#tf_dict = { x_i: x_ic, y_i: y_ic, x_f: x_fp, y_f:y_fp, t_f:t_fp}
-
-
-#c_dcb=neural_net(tf.concat([x_dcb, y_dcb], 1), weights_ib, biases_ib,np.array([0,1.5]),np.array([0,2.5]))
-#c_dcb=neural_net(tf.concat([x_dcb, y_dcb], 1), weights_dcb, biases_dcb,np.array([0,1.5]),np.array([0,2.5]))
-c_dcb=neural_net(tf.concat([x_dcb, t_dcb], 1), weights_c, biases_c)
-c_neb=neural_net(tf.concat([x_neb, t_neb], 1), weights_c, biases_c)
-c_ic=neural_net(tf.concat([x_i, t_i], 1), weights_c, biases_c)
-c_f=neural_net(tf.concat([x_f, t_f], 1), weights_c,biases_c)
-
-fc=net_NS(x_f,t_f,c_f)
-
-
-"""
-#adding 36 really worked out
-loss_ic=36*tf.reduce_sum(abs(c_ic))
-loss_dc=tf.reduce_sum(abs(c_dcb-c_dc))
-#adding 36 really worked out
-loss_f=tf.reduce_sum(abs(f))
-loss_j=tf.reduce_sum(abs(j))
-loss_all=loss_ic+loss_dc+loss_f+loss_j
-ind_dc=loss_all/loss_dc
-ind_ic=loss_all/loss_ic
-ind_f=loss_all/loss_f
-ind_j=loss_all/loss_j
-"""
-
-c_dc=0
-c_nb=smax-K
-c_ic1 = np.array([max(*x_ic[i]-K,0) for i in range(len(x_ic))])
-c_ic1=c_ic1[:,None]
-#loss = 36*tf.reduce_sum(abs(c_ic))+tf.reduce_sum(abs(c_dcb-c_dc))+tf.reduce_sum(abs(f))+tf.reduce_sum(abs(j))
-#tf.reduce_sum(abs(f)).eval(feed_dict=tf_dict,session=sess)
-#add square 
-loss = w_ic*tf.reduce_sum(tf.square(c_ic-c_ic1))/len(x_ic)+w_dc*tf.reduce_sum(tf.square(c_dcb-c_dc))/len(x_lb)+w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)+w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f)
-
-#loss = tf.reduce_sum(tf.square(c_ic))+10*tf.reduce_sum(tf.square(s_ic))+tf.reduce_sum(tf.square(c_dcb-c_dc))+100*tf.reduce_sum(tf.square(fc))+10000*tf.reduce_sum(tf.square(fs))+tf.reduce_sum(tf.square(j))
-
-
-loss_max=500000-loss
-
-
-
-optimizer_Adam = tf.compat.v1.train.AdamOptimizer(
-    learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locking=False,
-    name='Adam')
-
-optimizer_Adam_max = tf.compat.v1.train.AdamOptimizer(
-    learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locking=False,
-    name='Adam')
-
-
-train_op_Adam = optimizer_Adam.minimize(loss,var_list=[weights_c,biases_c])  
-
-
-train_op_Adam_max = optimizer_Adam_max.minimize(loss_max,var_list=[w_ic,w_dc,w_fc,w_nb])
-
-
-sess=tf.compat.v1.Session()
-init = tf.compat.v1.global_variables_initializer()
-sess.run(init)   
-"""
-w_icb=[]
-w_isb=[]
-w_dcb=[]
-w_fcb=[]
-w_fsb=[]
-w_jb=[]
-
-"""
-losstot=[]
-nIter=20000
-for it in range(nIter):
-    sess.run(train_op_Adam, tf_dict)
-    print(it)
-    #fv=f.eval(feed_dict=tf_dict,session=sess)
-    #print(it,loss_value,tf.reduce_sum(tf.square(c_dcb-c_dc)).eval(feed_dict=tf_dict,session=sess),tf.reduce_sum(tf.square(f)).eval(feed_dict=tf_dict,session=sess))
-    loss_value=loss.eval(feed_dict=tf_dict,session=sess)
-    if it%10==0:
-        losstot.append(loss_value)
-
-    if loss_value>1:
-        if it%1000==0:
-            sess.run(train_op_Adam_max, tf_dict)
-    
-    print(it,loss_value)
-    if abs(loss_value)<0.05:
-        break
-
-x1=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-t1=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
-
-t1np = np.empty((101,1))
-t1np.fill(0.25)
-tf1 = {x1: x_ic, t1: t1np}
-cat=neural_net(tf.concat([x1, t1], 1), weights_c, biases_c)
-catp=cat.eval(feed_dict=tf1,session=sess)
-plt.plot(x_ic, catp, 'g', label="actual")
-
 
 import numpy as np
 
@@ -332,7 +197,8 @@ def analytic(S):
     
 final_an=np.array([analytic(max(s[i],0.01)) for i in range(len(s))])
 
-plt.plot(x_ic, catp, 'g', label="actual")
+
+#plt.plot(x_ic, catp, 'g', label="actual")
 plt.plot(s,final_an)
 plt.plot(s[:],final[0,:])
 #plt.plot(s[:],final[-1,:])
@@ -346,13 +212,162 @@ print(noise)
 
 syn=noise+clean
 
-plt.plot(x_ic, catp, 'g', label="actual")
+#plt.plot(x_ic, catp, 'g', label="actual")
 plt.plot(s,final_an)
 plt.plot(s[:],final[0,:])
 plt.scatter(syn[:,0]+15,np.maximum(syn[:,1],0))
 
 x_train1=syn[:,0]+15
-y_train1=np.maxnp.maximum(syn[:,1],0)
+y_train1=np.maximum(syn[:,1],0)
+
+syn_data1=np.concatenate((x_train1[:,None],y_train1[:,None]),1)
+
+syn_data=syn_data1[:-7,:]
+x_s=syn_data[:,0][:,None]
+c_s=syn_data[:,1][:,None]
+t_s=np.zeros(len(x_s))[:,None]
+
+#ek baar fir se
+
+#DEFINE THIS ONLY FOR INPUT DATA, IE FEATURES AND TAGER WHICH Has to be minimised
+x_i=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+t_i=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+x_dcb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+t_dcb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+x_neb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+t_neb=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+x_f=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+t_f=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+x_ss=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+t_ss=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+
+
+weights_c, biases_c = initialize_NN(layers_c)  
+
+w_ic=tf.Variable(1.0)
+w_dc=tf.Variable(10.0)
+w_fc=tf.Variable(300.0)
+w_nb=tf.Variable(1.0)
+w_s=tf.Variable(0*5.0)
+
+#w_fc is 10000 but considering nomralization of loss it will be 10000*(15535/3000)=50000multiplied. then it gives best result
+
+
+
+sess=tf.compat.v1.Session()
+init = tf.compat.v1.global_variables_initializer()
+sess.run(init)
+
+minval=np.array([0,0])
+maxval=np.array([100,0.25])
+tf_dict = {x_dcb: x_lb, t_dcb: t_lb, x_neb: x_rb, t_neb: t_rb, x_i: x_ic, t_i: t_ic, x_f: xx_f, t_f: tt_f,x_ss: x_s, t_ss: t_s }
+
+#tf_dict = { x_i: x_ic, y_i: y_ic, x_f: x_fp, y_f:y_fp, t_f:t_fp}
+
+
+#c_dcb=neural_net(tf.concat([x_dcb, y_dcb], 1), weights_ib, biases_ib,np.array([0,1.5]),np.array([0,2.5]))
+#c_dcb=neural_net(tf.concat([x_dcb, y_dcb], 1), weights_dcb, biases_dcb,np.array([0,1.5]),np.array([0,2.5]))
+c_dcb=neural_net(tf.concat([x_dcb, t_dcb], 1), weights_c, biases_c)
+c_neb=neural_net(tf.concat([x_neb, t_neb], 1), weights_c, biases_c)
+c_ic=neural_net(tf.concat([x_i, t_i], 1), weights_c, biases_c)
+c_f=neural_net(tf.concat([x_f, t_f], 1), weights_c,biases_c)
+c_sp=neural_net(tf.concat([x_ss, t_ss], 1), weights_c,biases_c)
+
+fc=net_NS(x_f,t_f,c_f)
+
+
+c_dc=0
+c_nb=smax-K
+c_ic1 = np.array([max(*x_ic[i]-K,0) for i in range(len(x_ic))])
+c_ic1=c_ic1[:,None]
+#loss = 36*tf.reduce_sum(abs(c_ic))+tf.reduce_sum(abs(c_dcb-c_dc))+tf.reduce_sum(abs(f))+tf.reduce_sum(abs(j))
+#tf.reduce_sum(abs(f)).eval(feed_dict=tf_dict,session=sess)
+#add square 
+loss = w_ic*tf.reduce_sum(tf.square(c_ic-c_ic1))/len(x_ic)+w_dc*tf.reduce_sum(tf.square(c_dcb-c_dc))/len(x_lb)+ \
+w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)+w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f) + \
+w_s*tf.reduce_sum(tf.square(c_sp-c_s))/len(x_s)
+
+
+
+loss_max=500000-loss
+
+
+
+optimizer_Adam = tf.compat.v1.train.AdamOptimizer(
+    learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locking=False,
+    name='Adam')
+
+optimizer_Adam_max = tf.compat.v1.train.AdamOptimizer(
+    learning_rate=0.01, beta1=0.9, beta2=0.999, epsilon=1e-08, use_locking=False,
+    name='Adam')
+
+
+train_op_Adam = optimizer_Adam.minimize(loss,var_list=[weights_c,biases_c])  
+
+
+train_op_Adam_max = optimizer_Adam_max.minimize(loss_max,var_list=[w_ic,w_dc,w_fc,w_nb])
+
+
+sess=tf.compat.v1.Session()
+init = tf.compat.v1.global_variables_initializer()
+sess.run(init)   
+"""
+w_icb=[]
+w_isb=[]
+w_dcb=[]
+w_fcb=[]
+w_fsb=[]
+w_jb=[]
+"""
+losstot=[]
+nIter=20000
+for it in range(nIter):
+    sess.run(train_op_Adam, tf_dict)
+    print(it)
+    #fv=f.eval(feed_dict=tf_dict,session=sess)
+    #print(it,loss_value,tf.reduce_sum(tf.square(c_dcb-c_dc)).eval(feed_dict=tf_dict,session=sess),tf.reduce_sum(tf.square(f)).eval(feed_dict=tf_dict,session=sess))
+    loss_value=loss.eval(feed_dict=tf_dict,session=sess)
+    if it%10==0:
+        losstot.append(loss_value)
+
+    if loss_value>1:
+        if it%1000==0:
+            sess.run(train_op_Adam_max, tf_dict)
+    
+    print(it,loss_value)
+    if abs(loss_value)<0.05:
+        break
+
+
+x1=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+t1=tf.compat.v1.placeholder(tf.float32, shape=[None, x_ic.shape[1]])
+
+t1np = np.empty((101,1))
+t1np.fill(0.25)
+tf1 = {x1: x_ic, t1: t1np}
+cat=neural_net(tf.concat([x1, t1], 1), weights_c, biases_c)
+catp=cat.eval(feed_dict=tf1,session=sess)
+
+plt.plot(x_ic, catp, 'g', label="actual")
+plt.plot(s,final_an)
+plt.plot(s[:],final[0,:])
+
+
+
+
+
+
+
+np.savetxt('pinnoriginal.csv', catp)
+
 """
 loss = w_ic*tf.reduce_sum(tf.square(c_ic-c_ic1))/len(x_ic)+w_dc*tf.reduce_sum(tf.square(c_dcb-c_dc))/len(x_lb)+w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)+w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f)
 
@@ -365,7 +380,7 @@ fnp1=f1.eval(feed_dict=tf_dict,session=sess)
 f2=w_nb*tf.reduce_sum(tf.square(c_neb-c_nb))/len(x_rb)
 fnp2=f2.eval(feed_dict=tf_dict,session=sess)
 
-"""
+
 
 f3=w_fc*tf.reduce_sum(tf.square(fc))/len(xx_f)
-fnp3=f3.eval(feed_dict=tf_dict,session=sess)
+fnp3=f3.eval(feed_dict=tf_dict,session=sess)"""
